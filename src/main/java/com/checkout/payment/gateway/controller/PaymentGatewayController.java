@@ -21,7 +21,9 @@ public class PaymentGatewayController implements PaymentGatewayControllerAPI {
   }
 
   @Override
-  public ResponseEntity<PostPaymentResponse> createPayment(PostPaymentRequest request) {
-    return new ResponseEntity<>(paymentGatewayService.processPayment(request), HttpStatus.CREATED);
+  public ResponseEntity<PostPaymentResponse> createPayment(String idempotencyKey,
+      PostPaymentRequest request) {
+    PostPaymentResponse response = paymentGatewayService.processPayment(request, idempotencyKey);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 }

@@ -2,6 +2,7 @@ package com.checkout.payment.gateway.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +12,7 @@ import com.checkout.payment.gateway.external.AcquiringBankService;
 import com.checkout.payment.gateway.model.request.PostPaymentRequest;
 import com.checkout.payment.gateway.model.response.BankResponse;
 import com.checkout.payment.gateway.model.response.PostPaymentResponse;
+import com.checkout.payment.gateway.repository.IdempotencyRepository;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +29,9 @@ class PaymentGatewayServiceTest {
 
   @Mock
   PaymentsRepository paymentsRepository;
+
+  @Mock
+  IdempotencyRepository idempotencyRepository;
 
   @Mock
   AcquiringBankService acquiringBankService;
@@ -87,6 +92,47 @@ class PaymentGatewayServiceTest {
 
     assertThat(response.status()).isEqualTo(PaymentStatus.DECLINED);
     verify(paymentsRepository).add(any(PostPaymentResponse.class));
+  }
+
+
+  @Test
+  @DisplayName("processPayment with Idempotency-Key should return same response and avoid second bank call")
+  void processPaymentIsIdempotentWithKey() {
+    // given
+    String idempotencyKey = "test-key-123";
+    PostPaymentRequest request = buildRequest();
+
+    BankResponse bankResponse = BankResponse.builder()
+        .authorized(true)
+        .build();
+
+    when(idempotencyRepository.find(idempotencyKey)).thenReturn(Optional.empty());
+    when(acquiringBankService.processPayment(request)).thenReturn(bankResponse);
+
+    ArgumentCaptor<PostPaymentResponse> responseCaptor =
+        ArgumentCaptor.forClass(PostPaymentResponse.class);
+
+    // when: first call
+    PostPaymentResponse first = paymentGatewayService.processPayment(request, idempotencyKey);
+
+    // the response is now stored for this idempotency key
+    when(idempotencyRepository.find(idempotencyKey)).thenReturn(Optional.of(first));
+
+    // when: second call with same key and same request
+    PostPaymentResponse second = paymentGatewayService.processPayment(request, idempotencyKey);
+
+    // then: same response returned
+    assertThat(second).isEqualTo(first);
+    assertThat(second.id()).isEqualTo(first.id());
+    assertThat(second.status()).isEqualTo(PaymentStatus.AUTHORIZED);
+
+    // bank called only once
+    verify(acquiringBankService, times(1)).processPayment(request);
+
+    // payment stored only once
+    verify(paymentsRepository, times(1)).add(responseCaptor.capture());
+    PostPaymentResponse stored = responseCaptor.getValue();
+    assertThat(stored.id()).isEqualTo(first.id());
   }
 
   @Test

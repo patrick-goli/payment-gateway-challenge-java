@@ -152,6 +152,30 @@ configuration.
 - `amount` must be **positive** (`@Min(1)`), i.e. zero is not allowed, because a zero-amount payment
   is not a meaningful financial transaction for this gateway.
 
+### 6. Idempotency
+
+To support safe retries, the gateway implements **idempotency** on `POST /api/payment` using an
+`Idempotency-Key` header.
+
+- If the client supplies an `Idempotency-Key`:
+  - On first request:
+    - The payment is processed normally.
+    - The resulting `PostPaymentResponse` is stored in an in-memory `IdempotencyRepository`, keyed
+      by that header value.
+  - On subsequent requests with the same key:
+    - The gateway does **not** call the acquiring bank again.
+    - It returns the previously stored `PostPaymentResponse` with the same `id` and `status`.
+
+- If the client does **not** supply an idempotency key:
+  - Each POST is treated as a new payment request.
+
+**Important**: For a real production system, the idempotency store must be:
+
+- durable (e.g., database or cache with persistence),
+- partitioned by merchant/account,
+- and have appropriate TTL and collision handling.
+  For this use-case, an in-memory map is sufficient.
+
 ---
 
 ## Assumptions
@@ -231,7 +255,7 @@ app:
       - CAD
 ```
 
-2. **Run the application** (e.g., `./gradlew bootRun` or from your IDE).
+2. **Run the application** (e.g., `./gradlew bootRun` or from the IDE).
 
 3. **Run the tests**:
 
@@ -250,7 +274,8 @@ app:
 
 - Add authentication/authorization (e.g., API keys or OAuth2).
 - Introduce persistent storage (e.g., PostgreSQL) instead of in-memory repository.
-- Add idempotency keys for `POST /api/payment` to handle retries safely.
+- Persists the idempotency keys.
+  - validate that the same key with a different request body is treated as an error
 - Support more currencies.
 
 # Instructions for candidates

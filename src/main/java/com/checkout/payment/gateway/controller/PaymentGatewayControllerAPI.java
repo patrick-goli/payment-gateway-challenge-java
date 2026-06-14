@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/api/payment")
@@ -85,6 +86,10 @@ public interface PaymentGatewayControllerAPI {
           - If the request is valid and the acquiring bank simulator authorizes the payment, status will be `Authorized`.
           - If the request is valid but the bank simulator declines, status will be `Declined`.
           - If the request is invalid, the payment is rejected before calling the bank.
+          
+          Idempotency:
+          - If provided an `Idempotency-Key` header, repeated requests with the same key and identical body will return the same payment response.
+          - This ensures clients can safely retry a payment request without creating duplicate payments.
           """
   )
   @ApiResponse(
@@ -134,7 +139,16 @@ public interface PaymentGatewayControllerAPI {
   )
   @io.swagger.v3.oas.annotations.parameters.RequestBody(
       required = true,
-      description = "Payment request details",
+      description = """
+          Processes a card payment through the payment gateway and returns its resulting status.
+          - If the request is valid and the acquiring bank simulator authorizes the payment, status will be `Authorized`.
+          - If the request is valid but the bank simulator declines, status will be `Declined`.
+          - If the request is invalid, the payment is rejected before calling the bank.
+          
+          Idempotency:
+          - If provided an `Idempotency-Key` header, repeated requests with the same key and identical body will return the same payment response.
+          - This ensures clients can safely retry a payment request without creating duplicate payments.
+          """,
       content = @Content(
           mediaType = "application/json",
           schema = @Schema(implementation = PostPaymentRequest.class),
@@ -171,5 +185,13 @@ public interface PaymentGatewayControllerAPI {
       )
   )
   @PostMapping
-  ResponseEntity<PostPaymentResponse> createPayment(@Valid @RequestBody PostPaymentRequest request);
+  ResponseEntity<PostPaymentResponse> createPayment(
+      @Parameter(
+          description = "Idempotency key to ensure that retries do not create duplicate payments. "
+              + "Must be unique per logical payment attempt.",
+          required = false,
+          example = "e3b0c442-98fc-1c14-9afb-f4c8996fb924"
+      )
+      @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
+      @Valid @RequestBody PostPaymentRequest request);
 }
