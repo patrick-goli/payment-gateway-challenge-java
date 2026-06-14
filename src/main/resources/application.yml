@@ -1,0 +1,17 @@
+server:
+  port: 8090
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+app:
+  acquiring-bank:
+    api: http://localhost:8080/payments
+  payment:
+    supported-currencies:
+      - CAD
+      - USD
+      - EUR

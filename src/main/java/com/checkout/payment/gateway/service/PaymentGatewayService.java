@@ -1,31 +1,50 @@
 package com.checkout.payment.gateway.service;
 
-import com.checkout.payment.gateway.exception.EventProcessingException;
-import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.enums.PaymentStatus;
+import com.checkout.payment.gateway.exception.PaymentNotFoundException;
+import com.checkout.payment.gateway.external.AcquiringBankService;
+import com.checkout.payment.gateway.model.request.PostPaymentRequest;
+import com.checkout.payment.gateway.model.response.BankResponse;
+import com.checkout.payment.gateway.model.response.PostPaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class PaymentGatewayService {
 
-  private static final Logger LOG = LoggerFactory.getLogger(PaymentGatewayService.class);
 
   private final PaymentsRepository paymentsRepository;
+  private final AcquiringBankService acquiringBankService;
 
-  public PaymentGatewayService(PaymentsRepository paymentsRepository) {
-    this.paymentsRepository = paymentsRepository;
-  }
 
   public PostPaymentResponse getPaymentById(UUID id) {
-    LOG.debug("Requesting access to to payment with ID {}", id);
-    return paymentsRepository.get(id).orElseThrow(() -> new EventProcessingException("Invalid ID"));
+    log.debug("Requesting payment details with ID {}", id);
+    return paymentsRepository.get(id).orElseThrow(() -> new PaymentNotFoundException(id));
   }
 
-  public UUID processPayment(PostPaymentRequest paymentRequest) {
-    return UUID.randomUUID();
+  public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
+    BankResponse bankResponse = acquiringBankService.processPayment(paymentRequest);
+
+    PaymentStatus status = bankResponse.isAuthorized() ? PaymentStatus.AUTHORIZED
+        : PaymentStatus.DECLINED;
+
+    PostPaymentResponse response = PostPaymentResponse.builder()
+        .id(UUID.randomUUID())
+        .status(status)
+        .cardNumberLastFour(paymentRequest.cardNumberLastFour())
+        .expiryMonth(paymentRequest.expiryMonth())
+        .expiryYear(paymentRequest.expiryYear())
+        .currency(paymentRequest.currency())
+        .amount(paymentRequest.amount())
+        .build();
+
+    paymentsRepository.add(response);
+    log.debug("Payment processed with status={} id={}", status, response.id());
+    return response;
   }
 }
