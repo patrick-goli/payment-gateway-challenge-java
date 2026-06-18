@@ -1,5 +1,6 @@
 package com.checkout.payment.gateway.service;
 
+import static com.checkout.payment.gateway.util.TestUtil.validRequestWithEvenCardNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -39,21 +40,11 @@ class PaymentGatewayServiceTest {
   @InjectMocks
   PaymentGatewayService paymentGatewayService;
 
-  private PostPaymentRequest buildRequest() {
-    return PostPaymentRequest.builder()
-        .cardNumber("6454772338190988")
-        .expiryMonth(12)
-        .expiryYear(2030)
-        .currency("USD")
-        .amount(100)
-        .cvv("123")
-        .build();
-  }
 
   @Test
   @DisplayName("processPayment should map authorized=true to PaymentStatus.AUTHORIZED and store payment")
   void processPaymentAuthorized() {
-    PostPaymentRequest request = buildRequest();
+    PostPaymentRequest request = validRequestWithEvenCardNumber();
 
     BankResponse bankResponse = BankResponse.builder()
         .authorized(true)
@@ -64,7 +55,7 @@ class PaymentGatewayServiceTest {
     PostPaymentResponse response = paymentGatewayService.processPayment(request);
 
     assertThat(response.status()).isEqualTo(PaymentStatus.AUTHORIZED);
-    assertThat(response.cardNumberLastFour()).isEqualTo("0988");
+    assertThat(response.cardNumberLastFour()).isEqualTo(request.cardNumberLastFour());
     assertThat(response.currency()).isEqualTo(request.currency());
     assertThat(response.amount()).isEqualTo(request.amount());
     assertThat(response.id()).isNotNull();
@@ -78,9 +69,7 @@ class PaymentGatewayServiceTest {
   @Test
   @DisplayName("processPayment should map authorized=false to PaymentStatus.DECLINED and store payment")
   void processPaymentDeclined() {
-    PostPaymentRequest request = buildRequest().toBuilder()
-        .cardNumber("4242424242424242")
-        .build();
+    PostPaymentRequest request = validRequestWithEvenCardNumber();
 
     BankResponse bankResponse = BankResponse.builder()
         .authorized(false)
@@ -100,7 +89,7 @@ class PaymentGatewayServiceTest {
   void processPaymentIsIdempotentWithKey() {
     // given
     String idempotencyKey = "test-key-123";
-    PostPaymentRequest request = buildRequest();
+    PostPaymentRequest request = validRequestWithEvenCardNumber();
 
     BankResponse bankResponse = BankResponse.builder()
         .authorized(true)

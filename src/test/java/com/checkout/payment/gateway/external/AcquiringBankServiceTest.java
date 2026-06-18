@@ -1,5 +1,6 @@
 package com.checkout.payment.gateway.external;
 
+import static com.checkout.payment.gateway.util.TestUtil.validRequestWithOddCardNumber;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -37,14 +38,7 @@ class AcquiringBankServiceTest {
         new ApplicationProperties.AcquiringBank("http://bank-simulator/payments");
     when(applicationProperties.acquiringBank()).thenReturn(bankProps);
 
-    PostPaymentRequest request = PostPaymentRequest.builder()
-        .cardNumber("4242424242424241")
-        .expiryMonth(12)
-        .expiryYear(2030)
-        .currency("USD")
-        .amount(100)
-        .cvv("123")
-        .build();
+    PostPaymentRequest request = validRequestWithOddCardNumber();
 
     BankResponse bankResponse = BankResponse.builder()
         .authorized(true)

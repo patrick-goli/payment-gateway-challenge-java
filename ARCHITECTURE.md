@@ -110,7 +110,7 @@ transport-level success/error.
 
 ## Request Flow: Process Payment
 
-`POST /api/payment`:
+`POST /api/payments`:
 
 1. **Controller** (`PaymentGatewayController` implementing `PaymentGatewayControllerAPI`):
 
@@ -179,7 +179,7 @@ transport-level success/error.
 
 ## Request Flow: Retrieve Payment
 
-`GET /api/payment/{id}`:
+`GET /api/payments/{id}`:
 
 1. Controller calls `PaymentGatewayService.getPaymentById(id)`.
 2. Service:

@@ -14,18 +14,14 @@ import lombok.extern.jackson.Jacksonized;
 @ToString(onlyExplicitlyIncluded = true)
 public class BankRequest {
 
-  @ToString.Exclude
   private final String cardNumber;
 
-  @ToString.Exclude
   private final String expiryDate;
 
-  @ToString.Include
   private final String currency;
 
   @ToString.Include
   private final int amount;
 
-  @ToString.Exclude
   private final String cvv;
 }

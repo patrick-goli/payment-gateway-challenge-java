@@ -1,6 +1,7 @@
 package com.checkout.payment.gateway.external;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -66,7 +67,7 @@ class HttpClientTest {
     when(restTemplate.postForEntity(any(String.class), any(HttpEntity.class), any()))
         .thenThrow(new RuntimeException("boom"));
 
-    org.junit.jupiter.api.Assertions.assertThrows(
+    assertThrows(
         BankProcessingException.class,
         () -> customHttpClient.getBankData("http://bank", request)
     );

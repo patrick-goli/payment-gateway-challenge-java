@@ -16,7 +16,7 @@ payment data.
 
 ### Features
 
-- `POST /api/payment`
+- `POST /api/payments`
   - Validates card details and payment data.
   - If invalid → rejects the request without calling the bank.
   - If valid → constructs a `BankRequest` and calls the bank simulator.
@@ -25,7 +25,7 @@ payment data.
     - `Declined`
   - Handles bank unavailability as a **rejected** payment with a clear error.
 
-- `GET /api/payment/{id}`
+- `GET /api/payments/{id}`
   - Returns stored payment details:
     - `id`
     - `status` (`Authorized` / `Declined`)
@@ -154,7 +154,7 @@ configuration.
 
 ### 6. Idempotency
 
-To support safe retries, the gateway implements **idempotency** on `POST /api/payment` using an
+To support safe retries, the gateway implements **idempotency** on `POST /api/payments` using an
 `Idempotency-Key` header.
 
 - If the client supplies an `Idempotency-Key`:
@@ -221,17 +221,17 @@ To support safe retries, the gateway implements **idempotency** on `POST /api/pa
 - `PaymentGatewayControllerTest`
   - Starts a Spring Boot application context.
   - Uses `MockMvc` to:
-    - Seed `PaymentsRepository`, then `GET /api/payment/{id}`:
+    - Seed `PaymentsRepository`, then `GET /api/payments/{id}`:
       - Verifies `200 OK` and response fields match stored payment.
-    - Call `GET /api/payment/{id}` for a missing ID:
+    - Call `GET /api/payments/{id}` for a missing ID:
       - Verifies `404 Not Found` and `"Payment ID not found"` message.
 
 - `PaymentGatewayIntegrationTest`
   - Full flow (assuming the bank simulator is reachable at the configured URL):
-    - `POST /api/payment` with a valid request:
+    - `POST /api/payments` with a valid request:
       - Card ending in odd digit → expects `"Authorized"`, last four, amount, etc.
       - Extracts returned `id`.
-    - `GET /api/payment/{id}`:
+    - `GET /api/payments/{id}`:
       - Expects the same data as in the POST response.
 
 ---
@@ -257,6 +257,18 @@ app:
 
 2. **Run the application** (e.g., `./gradlew bootRun` or from the IDE).
 
+Or in the command line
+
+```bash
+java -jar ./build/libs/payment_gateway.jar
+```
+
+Or use Docker compose
+
+```bash
+docker-compose up
+```
+
 3. **Run the tests**:
 
 ```bash
@@ -280,9 +292,12 @@ app:
 
 # Instructions for candidates
 
-This is the Java version of the Payment Gateway challenge. If you haven't already read this [README.md](https://github.com/cko-recruitment/) on the details of this exercise, please do so now.
+This is the Java version of the Payment Gateway challenge. If you haven't already read
+this [README.md](https://github.com/cko-recruitment/) on the details of this exercise, please do so
+now.
 
 ## Requirements
+
 - JDK 17
 - Docker
 
@@ -294,12 +309,14 @@ test/ - Some simple JUnit tests
 
 imposters/ - contains the bank simulator configuration. Don't change this
 
-.editorconfig - don't change this. It ensures a consistent set of rules for submissions when reformatting code
+.editorconfig - don't change this. It ensures a consistent set of rules for submissions when
+reformatting code
 
 docker-compose.yml - configures the bank simulator
 
-
 ## API Documentation
-For documentation openAPI is included, and it can be found under the following url: **http://localhost:8090/swagger-ui/index.html**
+
+For documentation openAPI is included, and it can be found under the following url: *
+*http://localhost:8090/swagger-ui/index.html**
 
 **Feel free to change the structure of the solution, use a different library etc.**

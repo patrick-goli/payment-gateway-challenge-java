@@ -1,7 +1,8 @@
 package com.checkout.payment.gateway.repository;
 
 import com.checkout.payment.gateway.model.response.PostPaymentResponse;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PaymentsRepository {
 
-  private final HashMap<UUID, PostPaymentResponse> payments = new HashMap<>();
+  private final Map<UUID, PostPaymentResponse> payments = new ConcurrentHashMap<>();
 
   public void add(PostPaymentResponse payment) {
     payments.put(payment.id(), payment);

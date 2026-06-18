@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@RequestMapping("/api/payment")
+@RequestMapping("/api/payments")
 @Tag(name = "Payment Gateway", description = "Process and retrieve card payments")
 public interface PaymentGatewayControllerAPI {
 
@@ -28,7 +28,7 @@ public interface PaymentGatewayControllerAPI {
       description = "Returns the details of a previously processed payment, including status and masked card information."
   )
   @ApiResponse(
-      responseCode = "200",
+      responseCode = "201",
       description = "Payment found",
       content = @Content(
           mediaType = "application/json",
@@ -59,11 +59,9 @@ public interface PaymentGatewayControllerAPI {
               name = "PaymentNotFound",
               value = """
                   {
-                    "status": "Rejected",
                     "error": "Not Found",
                     "message": "Payment ID not found",
-                    "timestamp": "2026-06-14T17:22:10.4969087",
-                    "validationErrors": null
+                    "timestamp": "2026-06-14T17:22:10.4969087"
                   }
                   """
           )
